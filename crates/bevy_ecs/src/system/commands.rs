@@ -348,7 +348,9 @@ where
     T: Component,
 {
     fn write(self: Box<Self>, world: &mut World) {
-        world.entity_mut(self.entity).insert(self.component);
+        if let Some(mut entity) = world.get_entity_mut(self.entity) {
+            entity.insert(self.component);
+        }
     }
 }
 
