@@ -1,3 +1,8 @@
+#![cfg(any(
+    not(target_os = "linux"),
+    all(target_os = "linux", feature = "accesskit_linux")
+))]
+
 use bevy_a11y::{
     accesskit::{NodeBuilder, Rect, Role},
     AccessibilityNode,

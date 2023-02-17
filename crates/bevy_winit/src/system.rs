@@ -1,4 +1,10 @@
+#[cfg(any(
+    not(target_os = "linux"),
+    all(target_os = "linux", feature = "accesskit_linux")
+))]
 use bevy_a11y::AccessibilityRequested;
+// Needed for AccessKit.
+#[allow(unused_imports)]
 use bevy_ecs::{
     entity::Entity,
     event::EventWriter,
@@ -12,6 +18,8 @@ use bevy_utils::{
     HashMap,
 };
 use bevy_window::{RawHandleWrapper, Window, WindowClosed, WindowCreated};
+// Needed for AccessKit
+#[allow(unused_imports)]
 use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 
 use winit::{
@@ -21,8 +29,13 @@ use winit::{
 
 #[cfg(target_arch = "wasm32")]
 use crate::web_resize::{CanvasParentResizeEventChannel, WINIT_CANVAS_SELECTOR};
+
+#[cfg(any(
+    not(target_os = "linux"),
+    all(target_os = "linux", feature = "accesskit_linux")
+))]
+use crate::accessibility::{AccessKitAdapters, WinitActionHandlers};
 use crate::{
-    accessibility::{AccessKitAdapters, WinitActionHandlers},
     converters::{self, convert_window_level},
     get_best_videomode, get_fitting_videomode, WinitWindows,
 };
@@ -38,8 +51,20 @@ pub(crate) fn create_window<'a>(
     created_windows: impl Iterator<Item = (Entity, Mut<'a, Window>)>,
     mut event_writer: EventWriter<WindowCreated>,
     mut winit_windows: NonSendMut<WinitWindows>,
+    #[cfg(any(
+        not(target_os = "linux"),
+        all(target_os = "linux", feature = "accesskit_linux")
+    ))]
     mut adapters: NonSendMut<AccessKitAdapters>,
+    #[cfg(any(
+        not(target_os = "linux"),
+        all(target_os = "linux", feature = "accesskit_linux")
+    ))]
     mut handlers: ResMut<WinitActionHandlers>,
+    #[cfg(any(
+        not(target_os = "linux"),
+        all(target_os = "linux", feature = "accesskit_linux")
+    ))]
     mut accessibility_requested: ResMut<AccessibilityRequested>,
     #[cfg(target_arch = "wasm32")] event_channel: ResMut<CanvasParentResizeEventChannel>,
 ) {
@@ -58,8 +83,20 @@ pub(crate) fn create_window<'a>(
             event_loop,
             entity,
             &window,
+            #[cfg(any(
+                not(target_os = "linux"),
+                all(target_os = "linux", feature = "accesskit_linux")
+            ))]
             &mut adapters,
+            #[cfg(any(
+                not(target_os = "linux"),
+                all(target_os = "linux", feature = "accesskit_linux")
+            ))]
             &mut handlers,
+            #[cfg(any(
+                not(target_os = "linux"),
+                all(target_os = "linux", feature = "accesskit_linux")
+            ))]
             &mut accessibility_requested,
         );
         window

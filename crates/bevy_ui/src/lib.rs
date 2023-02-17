@@ -101,7 +101,6 @@ impl Plugin for UiPlugin {
             .register_type::<Val>()
             .register_type::<widget::Button>()
             .register_type::<widget::Label>()
-            .add_plugin(accessibility::AccessibilityPlugin)
             .configure_set(UiSystem::Focus.in_base_set(CoreSet::PreUpdate))
             .configure_set(UiSystem::Flex.in_base_set(CoreSet::PostUpdate))
             .configure_set(UiSystem::Stack.in_base_set(CoreSet::PostUpdate))
@@ -143,6 +142,12 @@ impl Plugin for UiPlugin {
                     .after(TransformSystem::TransformPropagate)
                     .in_base_set(CoreSet::PostUpdate),
             );
+
+        #[cfg(any(
+            not(target_os = "linux"),
+            all(target_os = "linux", feature = "accesskit_linux")
+        ))]
+        app.add_plugin(accessibility::AccessibilityPlugin);
 
         crate::render::build_ui_render(app);
     }

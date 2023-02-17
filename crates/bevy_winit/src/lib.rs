@@ -1,3 +1,7 @@
+#[cfg(any(
+    not(target_os = "linux"),
+    all(target_os = "linux", feature = "accesskit_linux")
+))]
 pub mod accessibility;
 mod converters;
 mod system;
@@ -6,6 +10,10 @@ mod web_resize;
 mod winit_config;
 mod winit_windows;
 
+#[cfg(any(
+    not(target_os = "linux"),
+    all(target_os = "linux", feature = "accesskit_linux")
+))]
 use bevy_a11y::AccessibilityRequested;
 use bevy_ecs::system::{SystemParam, SystemState};
 use system::{changed_window, create_window, despawn_window, CachedWindow};
@@ -41,6 +49,10 @@ use winit::{
     event_loop::{ControlFlow, EventLoop, EventLoopBuilder, EventLoopWindowTarget},
 };
 
+#[cfg(any(
+    not(target_os = "linux"),
+    all(target_os = "linux", feature = "accesskit_linux")
+))]
 use crate::accessibility::{AccessKitAdapters, AccessibilityPlugin, WinitActionHandlers};
 
 #[cfg(target_arch = "wasm32")]
@@ -84,12 +96,22 @@ impl Plugin for WinitPlugin {
                     .in_base_set(CoreSet::Last),
             );
 
+        #[cfg(any(
+            not(target_os = "linux"),
+            all(target_os = "linux", feature = "accesskit_linux")
+        ))]
         app.add_plugin(AccessibilityPlugin);
 
         #[cfg(target_arch = "wasm32")]
         app.add_plugin(CanvasParentResizePlugin);
 
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(all(
+            not(target_arch = "wasm32"),
+            any(
+                not(target_os = "linux"),
+                all(target_os = "linux", feature = "accesskit_linux")
+            )
+        ))]
         let mut create_window_system_state: SystemState<(
             Commands,
             NonSendMut<EventLoop<()>>,
@@ -99,6 +121,15 @@ impl Plugin for WinitPlugin {
             NonSendMut<AccessKitAdapters>,
             ResMut<WinitActionHandlers>,
             ResMut<AccessibilityRequested>,
+        )> = SystemState::from_world(&mut app.world);
+
+        #[cfg(all(target_os = "linux", not(feature = "accesskit_linux")))]
+        let mut create_window_system_state: SystemState<(
+            Commands,
+            NonSendMut<EventLoop<()>>,
+            Query<(Entity, &mut Window)>,
+            EventWriter<WindowCreated>,
+            NonSendMut<WinitWindows>,
         )> = SystemState::from_world(&mut app.world);
 
         #[cfg(target_arch = "wasm32")]
@@ -118,7 +149,13 @@ impl Plugin for WinitPlugin {
         // UIApplicationMain/NSApplicationMain.
         #[cfg(not(any(target_os = "android", target_os = "ios", target_os = "macos")))]
         {
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(all(
+                not(target_arch = "wasm32"),
+                any(
+                    not(target_os = "linux"),
+                    all(target_os = "linux", feature = "accesskit_linux")
+                )
+            ))]
             let (
                 commands,
                 event_loop,
@@ -129,6 +166,10 @@ impl Plugin for WinitPlugin {
                 handlers,
                 accessibility_requested,
             ) = create_window_system_state.get_mut(&mut app.world);
+
+            #[cfg(all(target_os = "linux", not(feature = "accesskit_linux")))]
+            let (commands, event_loop, mut new_windows, event_writer, winit_windows) =
+                create_window_system_state.get_mut(&mut app.world);
 
             #[cfg(target_arch = "wasm32")]
             let (
@@ -152,8 +193,20 @@ impl Plugin for WinitPlugin {
                 new_windows.iter_mut(),
                 event_writer,
                 winit_windows,
+                #[cfg(any(
+                    not(target_os = "linux"),
+                    all(target_os = "linux", feature = "accesskit_linux")
+                ))]
                 adapters,
+                #[cfg(any(
+                    not(target_os = "linux"),
+                    all(target_os = "linux", feature = "accesskit_linux")
+                ))]
                 handlers,
+                #[cfg(any(
+                    not(target_os = "linux"),
+                    all(target_os = "linux", feature = "accesskit_linux")
+                ))]
                 accessibility_requested,
                 #[cfg(target_arch = "wasm32")]
                 event_channel,
@@ -290,7 +343,13 @@ pub fn winit_runner(mut app: App) {
     let mut focused_window_state: SystemState<(Res<WinitSettings>, Query<&Window>)> =
         SystemState::from_world(&mut app.world);
 
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(all(
+        not(target_arch = "wasm32"),
+        any(
+            not(target_os = "linux"),
+            all(target_os = "linux", feature = "accesskit_linux")
+        )
+    ))]
     let mut create_window_system_state: SystemState<(
         Commands,
         Query<(Entity, &mut Window), Added<Window>>,
@@ -299,6 +358,14 @@ pub fn winit_runner(mut app: App) {
         NonSendMut<AccessKitAdapters>,
         ResMut<WinitActionHandlers>,
         ResMut<AccessibilityRequested>,
+    )> = SystemState::from_world(&mut app.world);
+
+    #[cfg(all(target_os = "linux", not(feature = "accesskit_linux")))]
+    let mut create_window_system_state: SystemState<(
+        Commands,
+        Query<(Entity, &mut Window), Added<Window>>,
+        EventWriter<WindowCreated>,
+        NonSendMut<WinitWindows>,
     )> = SystemState::from_world(&mut app.world);
 
     #[cfg(target_arch = "wasm32")]
@@ -683,7 +750,13 @@ pub fn winit_runner(mut app: App) {
         }
 
         if winit_state.active {
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(all(
+                not(target_arch = "wasm32"),
+                any(
+                    not(target_os = "linux"),
+                    all(target_os = "linux", feature = "accesskit_linux")
+                )
+            ))]
             let (
                 commands,
                 mut new_windows,
@@ -693,6 +766,10 @@ pub fn winit_runner(mut app: App) {
                 handlers,
                 accessibility_requested,
             ) = create_window_system_state.get_mut(&mut app.world);
+
+            #[cfg(all(target_os = "linux", not(feature = "accesskit_linux")))]
+            let (commands, mut new_windows, created_window_writer, winit_windows) =
+                create_window_system_state.get_mut(&mut app.world);
 
             #[cfg(target_arch = "wasm32")]
             let (
@@ -713,8 +790,20 @@ pub fn winit_runner(mut app: App) {
                 new_windows.iter_mut(),
                 created_window_writer,
                 winit_windows,
+                #[cfg(any(
+                    not(target_os = "linux"),
+                    all(target_os = "linux", feature = "accesskit_linux")
+                ))]
                 adapters,
+                #[cfg(any(
+                    not(target_os = "linux"),
+                    all(target_os = "linux", feature = "accesskit_linux")
+                ))]
                 handlers,
+                #[cfg(any(
+                    not(target_os = "linux"),
+                    all(target_os = "linux", feature = "accesskit_linux")
+                ))]
                 accessibility_requested,
                 #[cfg(target_arch = "wasm32")]
                 canvas_parent_resize_channel,

@@ -1,5 +1,9 @@
 //! Accessibility for Bevy
 
+#![cfg(any(
+    not(target_os = "linux"),
+    all(target_os = "linux", feature = "accesskit_linux")
+))]
 #![warn(missing_docs)]
 
 use std::{
